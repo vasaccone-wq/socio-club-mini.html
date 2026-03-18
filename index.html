@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>El Socio Club</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#060606;display:flex;justify-content:center;padding:1rem;min-height:100vh;font-family:'Barlow',sans-serif;}
+:root{
+  --vm:#2E7D32;--vl:#4CAF50;--vg:#81C784;
+  --am:#FFD600;--ro:#FF1744;--na:#FF6D00;--azl:#42A5F5;
+  --negro:#0A0A0A;--nc:#0f0f0f;--ns:#181818;--ns2:#1e1e1e;
+  --bl:#F0F0F0;--gr:#666;--gr2:#333;
+}
+.phone{width:100%;max-width:390px;background:var(--negro);border-radius:32px;border:2px solid #1a1a1a;overflow:hidden;position:relative;box-shadow:0 0 80px rgba(46,125,50,0.2),0 20px 60px rgba(0,0,0,1);}
+.statusbar{background:var(--negro);padding:10px 20px 4px;display:flex;justify-content:space-between;font-size:11px;color:#303030;}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 16px 9px;border-bottom:1px solid #141414;}
+.back{font-size:13px;font-weight:500;color:var(--vl);cursor:pointer;user-select:none;}
+.ttl{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:var(--vl);letter-spacing:2px;text-transform:uppercase;}
+.scr{display:none;flex-direction:column;}
+.scr.on{display:flex;}
+
+/* ── SCAN ── */
+.scan-body{flex:1;display:flex;flex-direction:column;align-items:center;padding:16px 16px 12px;gap:14px;}
+.scan-top{display:flex;align-items:center;justify-content:space-between;width:100%;background:var(--ns);border-radius:12px;padding:11px 14px;border:1px solid var(--ns2);}
+.scan-top-label{font-size:10px;color:var(--gr);letter-spacing:1.5px;text-transform:uppercase;font-weight:600;}
+.scan-top-val{font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:900;color:var(--vl);}
+.scan-top-sub{font-size:10px;color:var(--gr);margin-top:1px;}
+
+/* BOTÓN CÁMARA */
+.cam-btn-wrap{display:flex;flex-direction:column;align-items:center;gap:10px;}
+.cam-btn{width:140px;height:140px;border-radius:50%;background:var(--vm);border:3px solid var(--vl);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;gap:5px;position:relative;transition:transform .14s;}
+.cam-btn:active{transform:scale(.95);}
+.cam-btn::before{content:'';position:absolute;width:160px;height:160px;border-radius:50%;border:1.5px solid rgba(76,175,80,.2);animation:pulse 2s ease-out infinite;}
+@keyframes pulse{0%{transform:scale(.94);opacity:.9}70%{transform:scale(1.08);opacity:0}100%{transform:scale(1.08);opacity:0}}
+.cam-ico{width:40px;height:30px;border:3px solid var(--bl);border-radius:6px;position:relative;}
+.cam-ico::before{content:'';position:absolute;width:12px;height:12px;border-radius:50%;border:2px solid var(--bl);top:5px;left:50%;transform:translateX(-50%);}
+.cam-ico::after{content:'';position:absolute;width:6px;height:5px;background:var(--bl);border-radius:2px 2px 0 0;top:-6px;left:50%;transform:translateX(-58%);}
+.cam-lbl{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;color:var(--bl);letter-spacing:1.5px;text-transform:uppercase;}
+.cam-hint{font-size:12px;color:var(--gr);text-align:center;max-width:200px;line-height:1.5;}
+
+/* ESCÁNER EN VIVO */
+.scanner-wrap{width:100%;display:none;}
+.scanner-wrap.on{display:block;}
+.scanner-box{
+  width:100%;border-radius:16px;overflow:hidden;
+  border:2px solid var(--vl);position:relative;background:#000;
+}
+#scanner-video{width:100%;display:block;}
+.scanner-overlay{
+  position:absolute;top:0;left:0;right:0;bottom:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  pointer-events:none;
+}
+.scanner-line{
+  width:80%;height:2px;background:var(--vl);
+  box-shadow:0 0 8px rgba(76,175,80,0.8);
+  animation:scanLine 2s ease-in-out infinite;
+}
+@keyframes scanLine{0%,100%{transform:translateY(-60px);opacity:.6}50%{transform:translateY(60px);opacity:1}}
+.scanner-corners{position:absolute;top:0;left:0;right:0;bottom:0;}
+.scanner-corners::before,.scanner-corners::after{
+  content:'';position:absolute;width:30px;height:30px;border-color:var(--vl);border-style:solid;
+}
+.scanner-corners::before{top:12px;left:12px;border-width:3px 0 0 3px;border-radius:4px 0 0 0;}
+.scanner-corners::after{bottom:12px;right:12px;border-width:0 3px 3px 0;border-radius:0 0 4px 0;}
+.scanner-status{
+  margin-top:10px;padding:8px 14px;background:var(--ns);border-radius:20px;
+  border:1px solid var(--ns2);font-size:12px;color:var(--gr);text-align:center;
+}
+.scanner-status.detecting{color:var(--am);border-color:rgba(255,214,0,.3);}
+.scanner-status.found{color:var(--vl);border-color:rgba(76,175,80,.4);}
+.cancel-scan{
+  width:100%;padding:10px;background:transparent;border:1px solid var(--gr2);
+  border-radius:10px;font-family:'Barlow Condensed',sans-serif;font-size:13px;
+  font-weight:700;color:var(--gr);letter-spacing:1px;text-transform:uppercase;
+  cursor:pointer;margin-top:6px;
+}
+
+/* RECIENTES */
+.sec-lbl{font-size:10px;color:var(--gr);letter-spacing:1.5px;text-transform:uppercase;font-weight:600;margin-bottom:8px;width:100%;}
+.ri{background:var(--ns);border-radius:10px;padding:10px 13px;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;border:1px solid var(--ns2);transition:border-color .2s;width:100%;}
+.ri:hover{border-color:#2a2a2a;}
+.ri-n{font-size:13px;font-weight:500;color:var(--bl);}
+.ri-s{font-size:11px;color:var(--gr);margin-top:1px;}
+.pill{font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;letter-spacing:.8px;text-transform:uppercase;white-space:nowrap;}
+.pr{background:rgba(255,23,68,.14);color:var(--ro);}
+.pg{background:rgba(76,175,80,.14);color:var(--vg);}
+.po{background:rgba(255,109,0,.14);color:var(--na);}
+
+/* ── LOADING ── */
+.load-body{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px 18px;gap:14px;}
+.lp{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;color:var(--bl);text-align:center;text-transform:uppercase;line-height:1.2;}
+.ls-sub{font-size:12px;color:var(--gr);text-align:center;}
+.steps{width:100%;display:flex;flex-direction:column;gap:7px;margin-top:4px;}
+.step{display:flex;align-items:center;gap:10px;font-size:12px;padding:8px 12px;border-radius:8px;background:var(--ns);border:1px solid var(--ns2);transition:all .35s;}
+.step.done{border-color:rgba(76,175,80,.3);background:rgba(76,175,80,.05);}
+.step.act{border-color:rgba(255,214,0,.28);background:rgba(255,214,0,.03);}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--gr2);flex-shrink:0;transition:background .35s;}
+.step.done .dot{background:var(--vl);}
+.step.act .dot{background:var(--am);animation:bl .8s ease-in-out infinite;}
+@keyframes bl{0%,100%{opacity:1}50%{opacity:.2}}
+.st{color:var(--gr);}
+.step.done .st{color:var(--vg);}
+.step.act .st{color:var(--am);}
+
+/* ── VEREDICTO ── */
+.vbody{flex:1;display:flex;flex-direction:column;padding:12px 14px;gap:10px;overflow-y:auto;max-height:600px;}
+.pc{background:var(--ns);border-radius:12px;padding:12px 14px;border:1px solid var(--ns2);}
+.pn{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;color:var(--bl);text-transform:uppercase;}
+.pm{font-size:11px;color:var(--gr);margin-top:2px;}
+.ps{font-size:11px;color:var(--gr2);margin-top:4px;display:flex;align-items:center;gap:6px;}
+.sbadge{background:rgba(76,175,80,.12);color:var(--vg);font-size:10px;font-weight:600;padding:1px 7px;border-radius:20px;}
+.ean-badge{background:rgba(66,165,245,.12);color:var(--azl);font-size:10px;font-weight:600;padding:1px 7px;border-radius:20px;}
+.mv{border-radius:14px;padding:13px 16px;border:2px solid;text-align:center;}
+.mv-ro{background:rgba(255,23,68,.07);border-color:rgba(255,23,68,.38);}
+.mv-gn{background:rgba(76,175,80,.07);border-color:rgba(76,175,80,.38);}
+.mv-na{background:rgba(255,109,0,.07);border-color:rgba(255,109,0,.38);}
+.mvl{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;letter-spacing:2px;text-transform:uppercase;}
+.mv-ro .mvl{color:var(--ro);}
+.mv-gn .mvl{color:var(--vl);}
+.mv-na .mvl{color:var(--na);}
+.mvd{font-size:12px;color:var(--gr);margin-top:4px;line-height:1.5;}
+.af{background:rgba(76,175,80,.1);border:1.5px solid rgba(76,175,80,.4);border-radius:12px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;}
+.af-l{font-size:12px;color:var(--vg);font-weight:500;}
+.af-v{font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:900;color:var(--vl);}
+.cl{font-size:10px;color:var(--gr);letter-spacing:1.5px;text-transform:uppercase;font-weight:600;margin-bottom:6px;}
+.ch{background:var(--ns);border-radius:10px;padding:10px 12px;border:1px solid var(--ns2);display:flex;align-items:center;gap:10px;margin-bottom:6px;position:relative;}
+.ch.best{border-color:rgba(76,175,80,.48);background:rgba(76,175,80,.06);}
+.ci{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px;}
+.ci-s{background:rgba(21,101,192,.18);}
+.ci-a{background:rgba(255,109,0,.16);}
+.ci-m{background:rgba(255,214,0,.14);}
+.ci-b{background:rgba(76,175,80,.14);}
+.ci-x{background:rgba(255,23,68,.14);}
+.ci-info{flex:1;min-width:0;}
+.cn{font-size:13px;font-weight:500;color:var(--bl);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.cs{font-size:10px;color:var(--gr);margin-top:1px;}
+.cp{text-align:right;flex-shrink:0;}
+.cpv{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:var(--bl);}
+.cpv.g{color:var(--vl);}
+.cpv.r{color:var(--ro);}
+.cpn{font-size:10px;color:var(--gr);text-align:right;margin-top:1px;}
+.bt{position:absolute;top:-1px;right:10px;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;background:var(--vm);color:var(--vg);padding:2px 8px;border-radius:0 0 6px 6px;letter-spacing:.8px;text-transform:uppercase;}
+.et{font-size:10px;font-weight:600;padding:1px 6px;border-radius:20px;margin-left:3px;display:inline-block;vertical-align:middle;}
+.eg{background:rgba(76,175,80,.15);color:var(--vg);}
+.ec{background:rgba(255,109,0,.15);color:var(--na);}
+.fc{background:var(--ns);border-radius:12px;border:1px solid var(--ns2);overflow:hidden;}
+.fh{padding:9px 14px;border-bottom:1px solid #141414;display:flex;align-items:center;justify-content:space-between;}
+.ft{font-size:11px;font-weight:600;color:var(--bl);letter-spacing:.5px;text-transform:uppercase;}
+.fb{padding:9px 14px;}
+.fr{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #141414;font-size:12px;}
+.fr:last-child{border-bottom:none;}
+.fl{color:var(--gr);}
+.fv{font-weight:600;color:var(--bl);}
+.fv.r{color:var(--ro);}
+.fv.g{color:var(--vl);}
+.fv.o{color:var(--na);}
+.ir{border-radius:12px;padding:12px 14px;border:1px solid rgba(255,214,0,.2);background:rgba(255,214,0,.04);}
+.irh{display:flex;align-items:center;gap:8px;margin-bottom:7px;}
+.ichip{font-size:10px;font-weight:700;background:rgba(255,214,0,.14);color:var(--am);padding:2px 8px;border-radius:20px;letter-spacing:.8px;text-transform:uppercase;}
+.irt{font-size:12px;color:#aaa;line-height:1.65;}
+.irt strong{color:var(--am);}
+.reg-btn{width:100%;padding:11px;background:var(--vm);border:none;border-radius:10px;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:var(--bl);letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;margin-bottom:4px;}
+
+/* ── MI AHORRO ── */
+.ahorro-body{flex:1;overflow-y:auto;max-height:600px;padding-bottom:8px;}
+.hero-a{background:var(--ns);padding:20px 16px 16px;border-bottom:1px solid #141414;position:relative;overflow:hidden;}
+.hero-a::before{content:'';position:absolute;top:-40px;right:-40px;width:150px;height:150px;border-radius:50%;background:rgba(76,175,80,.055);}
+.ha-label{font-size:10px;color:var(--gr);letter-spacing:2px;text-transform:uppercase;font-weight:600;margin-bottom:6px;}
+.ha-wrap{display:flex;align-items:baseline;gap:5px;margin-bottom:3px;}
+.ha-sym{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:700;color:var(--vl);}
+.ha-num{font-family:'Barlow Condensed',sans-serif;font-size:58px;font-weight:900;color:var(--vl);line-height:1;letter-spacing:-2px;transition:color .25s;}
+.ha-num.flash{color:#fff;}
+.ha-period{font-size:12px;color:var(--gr);margin-top:3px;}
+.ha-sub{font-size:12px;color:var(--gr);margin-top:8px;line-height:1.55;}
+.ha-sub strong{color:var(--vg);}
+.proy-box{display:flex;align-items:center;justify-content:space-between;margin-top:12px;padding:10px 13px;background:rgba(255,214,0,.07);border:1px solid rgba(255,214,0,.2);border-radius:10px;}
+.proy-l{font-size:11px;color:var(--am);font-weight:600;}
+.proy-s{font-size:10px;color:rgba(255,214,0,.45);margin-top:1px;}
+.proy-v{font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:700;color:var(--am);text-align:right;}
+.stats-sec{padding:12px 14px;}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.scard{background:var(--ns);border-radius:12px;padding:11px 12px;border:1px solid var(--ns2);}
+.sv{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:700;}
+.sl2{font-size:10px;color:var(--gr);letter-spacing:.8px;text-transform:uppercase;margin-top:3px;line-height:1.3;}
+.sdelta{font-size:11px;font-weight:600;margin-top:4px;}
+.du{color:var(--vl);}
+.nivel-sec{padding:0 14px 12px;}
+.nivel-card{background:var(--ns);border-radius:12px;padding:12px;border:1px solid var(--ns2);}
+.nivel-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.nivel-nm{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;color:var(--bl);}
+.nivel-bg{font-size:10px;font-weight:700;background:rgba(255,214,0,.14);color:var(--am);padding:2px 8px;border-radius:20px;letter-spacing:.8px;}
+.prog-wrap{background:#111;border-radius:20px;height:6px;overflow:hidden;margin-bottom:6px;}
+.prog-fill{height:100%;border-radius:20px;background:var(--vl);transition:width 1.1s cubic-bezier(.16,1,.3,1);}
+.nivel-det{display:flex;justify-content:space-between;font-size:11px;color:var(--gr);}
+.nivel-det span:last-child{color:var(--vg);}
+.act-sec{padding:0 14px 12px;}
+.act-item{display:flex;align-items:center;gap:11px;padding:9px 0;border-bottom:1px solid #141414;}
+.act-item:last-child{border-bottom:none;}
+.aico{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+.aig{background:rgba(76,175,80,.14);}
+.air{background:rgba(255,23,68,.11);}
+.aio{background:rgba(255,109,0,.11);}
+.aib{background:rgba(66,165,245,.11);}
+.ai-info{flex:1;min-width:0;}
+.ain{font-size:13px;font-weight:500;color:var(--bl);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.aim{font-size:11px;color:var(--gr);margin-top:1px;}
+.ais{text-align:right;flex-shrink:0;}
+.aisv{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;}
+.aisv.saved{color:var(--vl);}
+.aisv.neutral{color:var(--gr);}
+.aisl{font-size:10px;color:var(--gr);text-align:right;margin-top:1px;}
+
+/* TOAST */
+.toast{position:absolute;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(27,94,32,0.97);border:1px solid var(--vl);border-radius:22px;padding:8px 16px;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:var(--bl);letter-spacing:1px;white-space:nowrap;opacity:0;transition:opacity .3s;pointer-events:none;z-index:20;}
+.toast.show{opacity:1;}
+
+/* NAV */
+.bnav{display:flex;background:var(--nc);border-top:1px solid #141414;padding:8px 0 12px;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px 0;-webkit-tap-highlight-color:transparent;}
+.nl{font-size:9px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:var(--gr);transition:color .2s;}
+.ni.on .nl{color:var(--vl);}
+.ni.on svg *[fill]{fill:var(--vl)!important;}
+.ni:not(.on) svg *[fill]{fill:#2a2a2a!important;}
+@keyframes slideUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.sl{animation:slideUp .28s ease;}
+@keyframes popNum{0%{transform:scale(1)}40%{transform:scale(1.09)}100%{transform:scale(1)}}
+.pop{animation:popNum .42s ease;}
+@keyframes newItem{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}
+.new-item{animation:newItem .35s ease;}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="statusbar"><span id="clock">9:41</span><span style="letter-spacing:1px;">EL SOCIO CLUB</span><span>●●●</span></div>
+  <div class="toast" id="toast">💰 ¡Ahorro registrado!</div>
+
+  <!-- ══ SCAN ══ -->
+  <div class="scr on" id="s-scan">
+    <div class="topbar">
+      <span class="ttl">El Socio Club</span>
+      <span style="font-size:10px;background:rgba(76,175,80,.14);color:var(--vg);padding:2px 9px;border-radius:20px;font-weight:600;">Socio #0042</span>
+    </div>
+    <div class="scan-body">
+      <div class="scan-top">
+        <div>
+          <div class="scan-top-label">Ahorro acumulado · Oct</div>
+          <div class="scan-top-val" id="scan-mini">$18.240</div>
+          <div class="scan-top-sub" id="scan-sub">47 auditorías · Guardián ★★★</div>
+        </div>
+        <div style="text-align:right;">
+          <div class="scan-top-label">Proyección anual</div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;color:var(--am);" id="scan-proy">$218.880</div>
+          <div class="scan-top-sub">estimado</div>
+        </div>
+      </div>
+
+      <!-- Botón cámara -->
+      <div class="cam-btn-wrap" id="cam-btn-wrap">
+        <div class="cam-btn" onclick="iniciarEscaner()">
+          <div class="cam-ico"></div>
+          <div class="cam-lbl">Escanear</div>
+        </div>
+        <div class="cam-hint">Apuntá la cámara al código de barras del producto</div>
+      </div>
+
+      <!-- Escáner en vivo -->
+      <div class="scanner-wrap" id="scanner-wrap">
+        <div class="scanner-box">
+          <div id="scanner-container"></div>
+          <div class="scanner-overlay">
+            <div class="scanner-line"></div>
+            <div class="scanner-corners"></div>
+          </div>
+        </div>
+        <div class="scanner-status detecting" id="scanner-status">Buscando código de barras...</div>
+        <button class="cancel-scan" onclick="detenerEscaner()">Cancelar</button>
+      </div>
+
+      <div style="width:100%;">
+        <div class="sec-lbl">Recientes</div>
+        <div class="ri" onclick="simScan('inflado','Aceite Cocinero 900ml','7790895001058')">
+          <div><div class="ri-n">Aceite Cocinero 900ml</div><div class="ri-s">Carrefour · Córdoba y San Martín</div></div>
+          <span class="pill pr">Inflado +22%</span>
+        </div>
+        <div class="ri" onclick="simScan('honesto','Leche La Serenísima 1L','7790045001012')">
+          <div><div class="ri-n">Leche La Serenísima 1L</div><div class="ri-s">Dia · Wheelwright 2100</div></div>
+          <span class="pill pg">Honesto</span>
+        </div>
+        <div class="ri" onclick="simScan('online','Yerba Taragüi 500g','7790387003456')">
+          <div><div class="ri-n">Yerba Taragüi 500g</div><div class="ri-s">Macro · Pellegrini y Balcarce</div></div>
+          <span class="pill po">Mejor online</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ LOADING ══ -->
+  <div class="scr" id="s-load">
+    <div class="topbar"><span class="back" onclick="goScan()">← Cancelar</span><span class="ttl">Analizando</span><span></span></div>
+    <div class="load-body">
+      <div class="lp" id="lpn">Aceite Cocinero 900ml</div>
+      <div class="ls-sub" id="lpean">Consultando todos los canales en Rosario...</div>
+      <div class="steps">
+        <div class="step" id="st1"><div class="dot"></div><span class="st">Identificando producto (EAN)</span></div>
+        <div class="step" id="st2"><div class="dot"></div><span class="st">Consultando API Precios Claros</span></div>
+        <div class="step" id="st3"><div class="dot"></div><span class="st">Buscando en Mercado Libre</span></div>
+        <div class="step" id="st4"><div class="dot"></div><span class="st">Estimando almacenes cercanos</span></div>
+        <div class="step" id="st5"><div class="dot"></div><span class="st">Calculando costo real con envío</span></div>
+        <div class="step" id="st6"><div class="dot"></div><span class="st">Generando veredicto con IA</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ VEREDICTO INFLADO ══ -->
+  <div class="scr" id="s-v1">
+    <div class="topbar"><span class="back" onclick="goScan()">← Volver</span><span class="ttl">Veredicto</span><span></span></div>
+    <div class="vbody sl">
+      <div class="pc">
+        <div class="pn" id="v1-nombre">Aceite Cocinero 900ml</div>
+        <div class="pm">Molinos Río de la Plata</div>
+        <div class="ps"><span class="sbadge">Escaneado</span><span class="ean-badge" id="v1-ean">EAN 7790895001058</span></div>
+      </div>
+      <div class="mv mv-ro"><div class="mvl">⚠ Precio Inflado</div><div class="mvd">$3.490 aquí · Promedio 60 días: $2.850<br>+22.4% sobre el histórico · +8.4% sobre inflación</div></div>
+      <div class="af"><div><div class="af-l">Ahorro potencial en esta compra</div><div style="font-size:10px;color:var(--gr);margin-top:2px;">Si comprás en el mejor canal</div></div><div class="af-v">+$800</div></div>
+      <div>
+        <div class="cl">Comparación de canales — precio real con envío</div>
+        <div class="ch best"><div class="bt">Mejor precio</div><div class="ci ci-b">🏭</div><div class="ci-info"><div class="cn">Tienda oficial Molinos</div><div class="cs">Online · <span class="et eg">Envío gratis</span></div></div><div class="cp"><div class="cpv g">$2.690</div><div class="cpn">Total c/ envío</div></div></div>
+        <div class="ch"><div class="ci ci-m">🛒</div><div class="ci-info"><div class="cn">Mercado Libre</div><div class="cs">Online · Full 1 día <span class="et ec">+$320</span></div></div><div class="cp"><div class="cpv">$2.990</div><div class="cpn">Total c/ envío</div></div></div>
+        <div class="ch"><div class="ci ci-s">🏪</div><div class="ci-info"><div class="cn">Dia · Wheelwright 2100</div><div class="cs">Presencial · 1.2 km</div></div><div class="cp"><div class="cpv">$3.090</div><div class="cpn">Sin envío</div></div></div>
+        <div class="ch"><div class="ci ci-a">🏬</div><div class="ci-info"><div class="cn">Almacén Don Alberto</div><div class="cs">Presencial · 380 m</div></div><div class="cp"><div class="cpv">$3.200</div><div class="cpn">Sin envío</div></div></div>
+        <div class="ch"><div class="ci ci-x">📍</div><div class="ci-info"><div class="cn">Carrefour · Aquí</div><div class="cs">Presencial · Este comercio</div></div><div class="cp"><div class="cpv r">$3.490</div><div class="cpn">+30% vs mejor</div></div></div>
+      </div>
+      <div class="fc">
+        <div class="fh"><span class="ft">Análisis financiero</span><span style="font-size:10px;color:var(--gr)">Inflación 4%/mes</span></div>
+        <div class="fb">
+          <div class="fr"><span class="fl">Precio aquí vs mejor canal</span><span class="fv r">+$800 más caro</span></div>
+          <div class="fr"><span class="fl">Alza vs inflación 60 días</span><span class="fv r">+8.4% extra</span></div>
+          <div class="fr"><span class="fl">6 cuotas sin interés aquí</span><span class="fv o">$582/mes · recargo 35%</span></div>
+          <div class="fr"><span class="fl">Cuotas vs inflación proy.</span><span class="fv r">No convienen</span></div>
+          <div class="fr"><span class="fl">Ahorro comprando en Molinos</span><span class="fv g">$800 al contado</span></div>
+        </div>
+      </div>
+      <div class="ir"><div class="irh"><span class="ichip">Veredicto IA</span></div><div class="irt"><strong>No comprés aquí.</strong> El mismo aceite está $800 más barato en la tienda oficial de Molinos con envío gratis hoy. Si lo necesitás ahora, Dia a 1.2 km lo tiene a $3.090. Las cuotas no convienen: el recargo (35%) supera la inflación proyectada (24% en 6 meses).</div></div>
+      <button class="reg-btn" onclick="registrarAhorro(800,'inflado','Aceite Cocinero 900ml','Carrefour → Molinos online')">✓ Registrar $800 de ahorro</button>
+    </div>
+  </div>
+
+  <!-- ══ VEREDICTO HONESTO ══ -->
+  <div class="scr" id="s-v2">
+    <div class="topbar"><span class="back" onclick="goScan()">← Volver</span><span class="ttl">Veredicto</span><span></span></div>
+    <div class="vbody sl">
+      <div class="pc">
+        <div class="pn" id="v2-nombre">Leche La Serenísima 1L</div>
+        <div class="pm">La Serenísima</div>
+        <div class="ps"><span class="sbadge">Escaneado</span><span class="ean-badge" id="v2-ean">EAN 7790045001012</span></div>
+      </div>
+      <div class="mv mv-gn"><div class="mvl">✓ Precio Honesto</div><div class="mvd">$1.180 aquí · Promedio 60 días: $1.150<br>+2.6% sobre el histórico · Dentro del rango normal</div></div>
+      <div class="af" style="background:rgba(66,165,245,.09);border-color:rgba(66,165,245,.3);">
+        <div><div class="af-l" style="color:var(--azl);">Resultado de la auditoría</div><div style="font-size:10px;color:var(--gr);margin-top:2px;">Estás en el canal más barato</div></div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900;color:var(--azl);">Precio justo ✓</div>
+      </div>
+      <div>
+        <div class="cl">Comparación de canales</div>
+        <div class="ch best"><div class="bt">Mejor precio</div><div class="ci ci-s">🏪</div><div class="ci-info"><div class="cn">Dia · Aquí</div><div class="cs">Presencial · Este comercio</div></div><div class="cp"><div class="cpv g">$1.180</div><div class="cpn">Sin envío</div></div></div>
+        <div class="ch"><div class="ci ci-a">🏬</div><div class="ci-info"><div class="cn">Almacén Lupita</div><div class="cs">Presencial · 200 m</div></div><div class="cp"><div class="cpv">$1.350</div><div class="cpn">Sin envío</div></div></div>
+        <div class="ch"><div class="ci ci-s">🏪</div><div class="ci-info"><div class="cn">Carrefour · Córdoba y SM</div><div class="cs">Presencial · 2.1 km</div></div><div class="cp"><div class="cpv">$1.240</div><div class="cpn">Sin envío</div></div></div>
+        <div class="ch"><div class="ci ci-m">🛒</div><div class="ci-info"><div class="cn">Mercado Libre</div><div class="cs">Online · <span class="et ec">+$450 envío</span></div></div><div class="cp"><div class="cpv r">$1.630</div><div class="cpn">Total c/ envío</div></div></div>
+      </div>
+      <div class="ir"><div class="irh"><span class="ichip">Veredicto IA</span></div><div class="irt"><strong>Podés comprar tranquilo aquí.</strong> Dia tiene el precio más bajo del canal presencial. Online no conviene — el envío encarece el producto un 38%.</div></div>
+      <button class="reg-btn" style="background:rgba(66,165,245,.2);border:1px solid rgba(66,165,245,.3);color:var(--azl);" onclick="registrarAhorro(0,'honesto','Leche La Serenísima 1L','Precio honesto confirmado')">✓ Registrar auditoría</button>
+    </div>
+  </div>
+
+  <!-- ══ VEREDICTO ONLINE ══ -->
+  <div class="scr" id="s-v3">
+    <div class="topbar"><span class="back" onclick="goScan()">← Volver</span><span class="ttl">Veredicto</span><span></span></div>
+    <div class="vbody sl">
+      <div class="pc">
+        <div class="pn" id="v3-nombre">Yerba Taragüi 500g</div>
+        <div class="pm">Las Marías</div>
+        <div class="ps"><span class="sbadge">Escaneado</span><span class="ean-badge" id="v3-ean">EAN 7790387003456</span></div>
+      </div>
+      <div class="mv mv-na"><div class="mvl">↗ Mejor Online</div><div class="mvd">$4.890 aquí · Precio online con envío gratis: $3.750<br>Ahorrás $1.140 comprando en línea hoy</div></div>
+      <div class="af" style="background:rgba(255,109,0,.08);border-color:rgba(255,109,0,.35);">
+        <div><div class="af-l" style="color:var(--na);">Ahorro potencial en esta compra</div><div style="font-size:10px;color:var(--gr);margin-top:2px;">Comprando online en vez de aquí</div></div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:900;color:var(--na);">+$1.140</div>
+      </div>
+      <div>
+        <div class="cl">Comparación de canales</div>
+        <div class="ch best"><div class="bt">Mejor precio</div><div class="ci ci-b">🏭</div><div class="ci-info"><div class="cn">Tienda oficial Las Marías</div><div class="cs">Online · <span class="et eg">Envío gratis</span></div></div><div class="cp"><div class="cpv g">$3.750</div><div class="cpn">Total c/ envío</div></div></div>
+        <div class="ch"><div class="ci ci-m">🛒</div><div class="ci-info"><div class="cn">Mercado Libre</div><div class="cs">Online · Full 1 día <span class="et eg">Gratis</span></div></div><div class="cp"><div class="cpv">$3.990</div><div class="cpn">Total c/ envío</div></div></div>
+        <div class="ch"><div class="ci ci-s">🏪</div><div class="ci-info"><div class="cn">Carrefour · Córdoba y SM</div><div class="cs">Presencial · 1.8 km</div></div><div class="cp"><div class="cpv">$4.590</div><div class="cpn">Sin envío</div></div></div>
+        <div class="ch"><div class="ci ci-x">📍</div><div class="ci-info"><div class="cn">Macro · Aquí</div><div class="cs">Presencial · Este comercio</div></div><div class="cp"><div class="cpv r">$4.890</div><div class="cpn">+30% vs mejor</div></div></div>
+      </div>
+      <div class="ir"><div class="irh"><span class="ichip">Veredicto IA</span></div><div class="irt"><strong>Comprá online, no aquí.</strong> La tienda oficial de Las Marías tiene envío gratis y es $1.140 más barata. Si agregás 2 o 3 productos más, el ahorro total puede superar $3.500 en una sola orden.</div></div>
+      <button class="reg-btn" onclick="registrarAhorro(1140,'online','Yerba Taragüi 500g','Macro → Las Marías online')">✓ Registrar $1.140 de ahorro</button>
+    </div>
+  </div>
+
+  <!-- ══ MI AHORRO ══ -->
+  <div class="scr" id="s-ahorro">
+    <div class="topbar"><span></span><span class="ttl">Mi Ahorro</span><span></span></div>
+    <div class="ahorro-body">
+      <div class="hero-a">
+        <div class="ha-label">Ahorro acumulado · Octubre 2025</div>
+        <div class="ha-wrap"><div class="ha-sym">$</div><div class="ha-num" id="ha-num">18.240</div></div>
+        <div class="ha-period">Este mes · <span id="ha-scans">47</span> auditorías realizadas</div>
+        <div class="ha-sub">Evitaste pagar de más en <strong id="ha-prod">31 productos</strong>. La IA detectó <strong id="ha-inflados">16 precios inflados</strong>.</div>
+        <div class="proy-box">
+          <div><div class="proy-l">Proyección anual</div><div class="proy-s">A este ritmo de compras</div></div>
+          <div><div class="proy-v" id="ha-proy">$218.880</div><div class="proy-s" style="text-align:right;">en 12 meses</div></div>
+        </div>
+      </div>
+      <div class="stats-sec">
+        <div class="sec-lbl">Desglose de ahorro</div>
+        <div class="stats-grid">
+          <div class="scard"><div class="sv" style="color:var(--vl);" id="st-precios">$11.800</div><div class="sl2">Precios inflados evitados</div><div class="sdelta du">↑ 31 productos</div></div>
+          <div class="scard"><div class="sv" style="color:var(--am);" id="st-canal">$4.940</div><div class="sl2">Cambio de canal</div><div class="sdelta du">↑ Online vs físico</div></div>
+          <div class="scard"><div class="sv" style="color:var(--azl);" id="st-cuotas">$1.200</div><div class="sl2">Decisión de cuotas</div><div class="sdelta du">↑ 4 compras</div></div>
+          <div class="scard"><div class="sv" style="color:var(--na);" id="st-pool">$300</div><div class="sl2">Pool de compras</div><div class="sdelta" style="color:var(--na);">⏳ 2 en espera</div></div>
+        </div>
+      </div>
+      <div class="nivel-sec">
+        <div class="sec-lbl">Nivel de socio</div>
+        <div class="nivel-card">
+          <div class="nivel-hdr"><div class="nivel-nm" id="nivel-nm">Guardián ★★★</div><div class="nivel-bg" id="nivel-bg">Nivel 3</div></div>
+          <div class="prog-wrap"><div class="prog-fill" id="nivel-bar" style="width:61%"></div></div>
+          <div class="nivel-det"><span id="nivel-actual">$18.240 ahorrados</span><span id="nivel-next">Próximo nivel a $30.000 →</span></div>
+        </div>
+      </div>
+      <div class="act-sec">
+        <div class="sec-lbl">Últimas auditorías</div>
+        <div id="act-lista">
+          <div class="act-item"><div class="aico aig">✓</div><div class="ai-info"><div class="ain">Aceite Cocinero 900ml</div><div class="aim">Hoy · Carrefour → Molinos online</div></div><div class="ais"><div class="aisv saved">+$800</div><div class="aisl">ahorrado</div></div></div>
+          <div class="act-item"><div class="aico aio">↗</div><div class="ai-info"><div class="ain">Yerba Taragüi 500g</div><div class="aim">Hoy · Macro → Las Marías online</div></div><div class="ais"><div class="aisv saved">+$1.140</div><div class="aisl">ahorrado</div></div></div>
+          <div class="act-item"><div class="aico aig">✓</div><div class="ai-info"><div class="ain">Leche La Serenísima 1L</div><div class="aim">Ayer · Precio honesto confirmado</div></div><div class="ais"><div class="aisv neutral">$0</div><div class="aisl">precio justo</div></div></div>
+          <div class="act-item"><div class="aico air">⚠</div><div class="ai-info"><div class="ain">Arroz Maximo 1kg</div><div class="aim">Ayer · Coto → Dia Wheelwright</div></div><div class="ais"><div class="aisv saved">+$420</div><div class="aisl">ahorrado</div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- NAV -->
+  <div class="bnav">
+    <div class="ni on" id="nb1" onclick="goNav('s-scan','nb1')">
+      <svg width="20" height="20" viewBox="0 0 20 20"><rect x="2" y="2" width="5" height="5" rx="1" fill="#333"/><rect x="13" y="2" width="5" height="5" rx="1" fill="#333"/><rect x="2" y="13" width="5" height="5" rx="1" fill="#333"/><rect x="13" y="13" width="5" height="5" rx="1" fill="#333"/><rect x="8.5" y="8.5" width="3" height="3" rx="0.5" fill="#333"/></svg>
+      <span class="nl">Auditoría</span>
+    </div>
+    <div class="ni" id="nb2">
+      <svg width="20" height="20" viewBox="0 0 20 20"><rect x="3" y="3" width="14" height="14" rx="2" fill="#333"/><rect x="5" y="5" width="4" height="2" rx="0.5" fill="#111"/><rect x="11" y="5" width="4" height="2" rx="0.5" fill="#111"/><rect x="5" y="9" width="4" height="2" rx="0.5" fill="#111"/><rect x="11" y="9" width="4" height="2" rx="0.5" fill="#111"/><rect x="5" y="13" width="4" height="2" rx="0.5" fill="#111"/><rect x="11" y="13" width="4" height="2" rx="0.5" fill="#111"/></svg>
+      <span class="nl">Cuotas</span>
+    </div>
+    <div class="ni" id="nb3" onclick="goNav('s-ahorro','nb3')">
+      <svg width="20" height="20" viewBox="0 0 20 20"><circle cx="10" cy="7" r="3.5" fill="#333"/><rect x="3" y="13" width="14" height="5" rx="2" fill="#333" opacity=".6"/></svg>
+      <span class="nl">Mi Ahorro</span>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Reloj real ──
+function updateClock(){var n=new Date();document.getElementById('clock').textContent=n.getHours()+':'+(n.getMinutes()<10?'0':'')+n.getMinutes();}
+updateClock();setInterval(updateClock,10000);
+
+// ── Estado ──
+var G={total:18240,precios:11800,canal:4940,cuotas:1200,pool:300,scans:47,inflados:16,productos:31};
+var NIVELES=[{min:0,max:5000,nm:'Explorador ★',bg:'Nivel 1'},{min:5000,max:15000,nm:'Vigilante ★★',bg:'Nivel 2'},{min:15000,max:30000,nm:'Guardián ★★★',bg:'Nivel 3'},{min:30000,max:60000,nm:'Centinela ★★★★',bg:'Nivel 4'},{min:60000,max:9e9,nm:'Leyenda ★★★★★',bg:'Nivel 5'}];
+var loadT=null;
+var scannerActivo=false;
+
+var EAN_DB={
+  '7790895001058':{tipo:'inflado',nombre:'Aceite Cocinero 900ml'},
+  '7790045001012':{tipo:'honesto',nombre:'Leche La Serenísima 1L'},
+  '7790387003456':{tipo:'online', nombre:'Yerba Taragüi 500g'},
+};
+
+function fmt(n){return Math.round(n).toLocaleString('es-AR');}
+
+function showScr(id){document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on'));document.getElementById(id).classList.add('on');}
+function setNav(id){document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));document.getElementById(id).classList.add('on');}
+function goNav(s,n){showScr(s);setNav(n);}
+function goScan(){detenerEscaner();clearTimeout(loadT);showScr('s-scan');setNav('nb1');}
+
+function mostrarToast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800);}
+
+function animNum(id,from,to,dur){
+  var el=document.getElementById(id);var t0=performance.now();
+  (function f(now){var p=Math.min((now-t0)/dur,1);var e=p===1?1:1-Math.pow(2,-10*p);el.textContent=fmt(from+(to-from)*e);if(p<1)requestAnimationFrame(f);else el.textContent=fmt(to);})(t0);
+}
+
+function updateNivel(){
+  var nv=NIVELES.find(n=>G.total>=n.min&&G.total<n.max)||NIVELES[NIVELES.length-1];
+  document.getElementById('nivel-nm').textContent=nv.nm;
+  document.getElementById('nivel-bg').textContent=nv.bg;
+  var pct=nv.max<9e9?Math.round((G.total-nv.min)/(nv.max-nv.min)*100):100;
+  document.getElementById('nivel-bar').style.width=pct+'%';
+  document.getElementById('nivel-actual').textContent='$'+fmt(G.total)+' ahorrados';
+  document.getElementById('nivel-next').textContent=nv.max<9e9?'Próximo nivel a $'+fmt(nv.max)+' →':'¡Nivel máximo! 🏆';
+}
+
+function updateScanHeader(){
+  document.getElementById('scan-mini').textContent='$'+fmt(G.total);
+  var nv=NIVELES.find(n=>G.total>=n.min&&G.total<n.max)||NIVELES[NIVELES.length-1];
+  document.getElementById('scan-sub').textContent=G.scans+' auditorías · '+nv.nm;
+  document.getElementById('scan-proy').textContent='$'+fmt(G.total*12);
+}
+
+// ── ESCÁNER CON QUAGGA ──
+function iniciarEscaner(){
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
+    mostrarToast('⚠️ Cámara no disponible en este navegador');return;
+  }
+  document.getElementById('cam-btn-wrap').style.display='none';
+  document.getElementById('scanner-wrap').classList.add('on');
+  scannerActivo=true;
+
+  Quagga.init({
+    inputStream:{
+      type:'LiveStream',
+      target:document.getElementById('scanner-container'),
+      constraints:{facingMode:'environment',width:{ideal:1280},height:{ideal:720}},
+    },
+    decoder:{readers:['ean_reader','ean_8_reader','code_128_reader','upc_reader']},
+    locate:true,
+  },function(err){
+    if(err){mostrarToast('⚠️ No se pudo acceder a la cámara');detenerEscaner();return;}
+    Quagga.start();
+  });
+
+  Quagga.onDetected(function(data){
+    var code=data.codeResult.code;
+    if(code&&scannerActivo){
+      procesarEAN(code);
+    }
+  });
+}
+
+function detenerEscaner(){
+  if(scannerActivo){
+    try{Quagga.stop();}catch(e){}
+    scannerActivo=false;
+  }
+  document.getElementById('cam-btn-wrap').style.display='flex';
+  document.getElementById('scanner-wrap').classList.remove('on');
+  document.getElementById('scanner-container').innerHTML='';
+}
+
+function procesarEAN(ean){
+  detenerEscaner();
+  document.getElementById('scanner-status').textContent='¡Código encontrado: '+ean+'!';
+  document.getElementById('scanner-status').className='scanner-status found';
+
+  var prod=EAN_DB[ean];
+  if(prod){
+    simScan(prod.tipo, prod.nombre, ean);
+  } else {
+    // EAN desconocido — mostramos igual con datos genéricos
+    simScan('inflado','Producto escaneado',ean);
+  }
+}
+
+// ── SIMULACIÓN (demo o desde escáner) ──
+var productData={
+  inflado:{nm:'Aceite Cocinero 900ml',dest:'s-v1',ean:'7790895001058'},
+  honesto:{nm:'Leche La Serenísima 1L',dest:'s-v2',ean:'7790045001012'},
+  online: {nm:'Yerba Taragüi 500g',   dest:'s-v3',ean:'7790387003456'},
+};
+
+function simScan(tipo, nombre, ean){
+  var dest=productData[tipo]?productData[tipo].dest:'s-v1';
+  document.getElementById('lpn').textContent=nombre||'Producto';
+  document.getElementById('lpean').textContent=ean?'EAN: '+ean:'Consultando canales en Rosario...';
+
+  // Actualizar nombre y EAN en veredicto
+  var vidx=dest==='s-v1'?'1':dest==='s-v2'?'2':'3';
+  var nEl=document.getElementById('v'+vidx+'-nombre');
+  var eEl=document.getElementById('v'+vidx+'-ean');
+  if(nEl&&nombre)nEl.textContent=nombre;
+  if(eEl&&ean)eEl.textContent='EAN '+ean;
+
+  showScr('s-load');setNav('nb1');
+  var ids=['st1','st2','st3','st4','st5','st6'];
+  ids.forEach(id=>{var e=document.getElementById(id);e.classList.remove('done','act');});
+  var i=0;
+  function tick(){
+    if(i>0)document.getElementById(ids[i-1]).classList.replace('act','done');
+    if(i<ids.length){document.getElementById(ids[i]).classList.add('act');i++;loadT=setTimeout(tick,i===ids.length?600:480);}
+    else loadT=setTimeout(()=>showScr(dest),380);
+  }
+  tick();
+}
+
+// ── REGISTRAR AHORRO ──
+function registrarAhorro(monto,tipo,nombre,meta){
+  var prev=G.total;
+  G.total+=monto;G.scans++;
+  if(tipo==='inflado'){G.precios+=monto;G.inflados++;G.productos++;}
+  else if(tipo==='online'){G.canal+=monto;G.productos++;}
+  else{G.productos++;}
+
+  var el=document.getElementById('ha-num');
+  el.classList.remove('pop');void el.offsetWidth;el.classList.add('pop','flash');
+  setTimeout(()=>el.classList.remove('flash'),320);
+  animNum('ha-num',prev,G.total,900);
+  animNum('ha-proy',prev*12,G.total*12,1000);
+  animNum('st-precios',G.precios-(tipo==='inflado'?monto:0),G.precios,700);
+  animNum('st-canal',G.canal-(tipo==='online'?monto:0),G.canal,700);
+
+  document.getElementById('ha-scans').textContent=G.scans;
+  document.getElementById('ha-prod').textContent=G.productos+' productos';
+  document.getElementById('ha-inflados').textContent=G.inflados+' precios inflados';
+  updateNivel();updateScanHeader();
+
+  if(monto>0){
+    var ico=tipo==='inflado'?'air aio':'aio';
+    var lista=document.getElementById('act-lista');
+    var div=document.createElement('div');
+    div.className='act-item new-item';
+    div.innerHTML=`<div class="aico ${tipo==='inflado'?'air':'aio'}">${tipo==='inflado'?'⚠':'↗'}</div><div class="ai-info"><div class="ain">${nombre}</div><div class="aim">Ahora · ${meta}</div></div><div class="ais"><div class="aisv saved">+$${fmt(monto)}</div><div class="aisl">ahorrado</div></div>`;
+    lista.insertBefore(div,lista.firstChild);
+  }
+
+  mostrarToast(monto>0?'💰 +$'+fmt(monto)+' registrado':'✓ Auditoría registrada');
+  setTimeout(()=>{showScr('s-ahorro');setNav('nb3');},600);
+}
+
+updateNivel();updateScanHeader();
+</script>
+</body>
+</html>
